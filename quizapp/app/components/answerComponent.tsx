@@ -4,6 +4,8 @@ import { data } from "@/assets/data/dummyData";
 import { useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 
+
+
 export default function Answers() {
   const { id } = useLocalSearchParams();
   const questions = data.questions;
