@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome } from '@expo/vector-icons';// Using Feather icons
 
-const DURATION = 23; // The total time for the countdown
+const DURATION = 30; // The total time for the countdown
 
 const Timer = ({ onComplete  } : any) => {
   const [timeLeft, setTimeLeft] = useState(DURATION);
@@ -34,7 +34,7 @@ const Timer = ({ onComplete  } : any) => {
     const percentage = (timeLeft / DURATION) * 100;
     Animated.timing(progressAnim, {
       toValue: percentage,
-      duration: 300, // A short duration for a smooth update
+      duration: 500, // A short duration for a smooth update
       useNativeDriver: false, // 'width' is not supported by native driver
     }).start();
   }, [timeLeft, progressAnim]);

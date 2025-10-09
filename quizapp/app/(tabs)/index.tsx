@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesome } from "@expo/vector-icons";
-import Answers from "../components/answerComponent";
 import { data } from "@/assets/images/data/dummyData";
 import { useLocalSearchParams } from "expo-router";
 import Timer from "../components/timer";
@@ -31,11 +30,9 @@ export default function Component() {
     }
   };
 
-  
-
   return (
     <SafeAreaView style={styles.container}>
-      <Timer />
+      <Timer key={currentQuestionIndex} />
       <Text style={styles.text}>
         Question {currentQuestionIndex + 1}
         <Text style={styles.supportText}>/10</Text>{" "}
@@ -45,20 +42,20 @@ export default function Component() {
       </Text>
       <Text style={styles.question}>{currentQuestion.question}</Text>
       <View style={styles.answerContainer}>
-          {currentQuestion.options.map((option, index) => (
-            <TouchableOpacity
-              onPress={() => handleSelection(index)}
-              key={index}
-              style={[styles.answers, selected === index && styles.selected]}
-            >
-              <Text style={styles.text}>{option}</Text>
-              {selected === index ? (
-                <FontAwesome name="check-circle" size={28} color="#ffff" />
-              ) : (
-                <FontAwesome name="circle-o" size={28} color="#3d4f85ff" />
-              )}
-            </TouchableOpacity>
-          ))}
+        {currentQuestion.options.map((option, index) => (
+          <TouchableOpacity
+            onPress={() => handleSelection(index)}
+            key={index}
+            style={[styles.answers, selected === index && styles.selected]}
+          >
+            <Text style={styles.text}>{option}</Text>
+            {selected === index ? (
+              <FontAwesome name="check-circle" size={28} color="#ffff" />
+            ) : (
+              <FontAwesome name="circle-o" size={28} color="#3d4f85ff" />
+            )}
+          </TouchableOpacity>
+        ))}
       </View>
 
       <View
@@ -69,8 +66,11 @@ export default function Component() {
           marginTop: 16,
         }}
       >
-        {currentQuestionIndex === questions.length - 1 ? <NextButton   title="Check Score" /> : <NextButton  onPress={() => handleNext()} title="Next" /> }
-        
+        {currentQuestionIndex === questions.length - 1 ? (
+          <NextButton title="Check Score" />
+        ) : (
+          <NextButton onPress={() => handleNext()} title="Next" />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -89,7 +89,6 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     color: Colors.textPrimary,
     opacity: 0.5,
-
   },
   supportText: {
     fontSize: 16,
@@ -109,12 +108,11 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginTop: 16,
     height: 110,
-    
   },
   answerContainer: {
     marginTop: 96,
     width: "100%",
-    position: "fixed"
+    position: "fixed",
   },
   answers: {
     padding: 16,
@@ -122,12 +120,11 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-    
+
     borderColor: "#3d4f85ff",
     alignItems: "center",
     borderRadius: 16,
     marginBottom: 12,
-
   },
 
   selected: {
