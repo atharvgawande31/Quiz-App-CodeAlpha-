@@ -69,6 +69,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     marginBottom: 36,
+    marginTop: 20,
     height: 40,
     backgroundColor: '#3a3f5a',
     borderRadius: 20,

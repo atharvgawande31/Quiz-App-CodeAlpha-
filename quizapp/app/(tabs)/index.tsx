@@ -10,52 +10,74 @@ import { Colors } from "@/constants/Colors";
 
 export default function Component() {
   const { id } = useLocalSearchParams();
-
   const questions = data.questions;
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
 
   const currentQuestion =
     questions.find((q) => q.id === id) || questions[currentQuestionIndex];
 
-  const [selected, setSelected] = useState(null);
-
-  function handleSelection(index: any) {
-    setSelected(index);
+  function handleSelection(index: number) {
+    // Only allow one selection
+    if (selected === null) {
+      setSelected(index);
+    }
   }
 
   const handleNext = () => {
-    // Move to the next question, but don't go past the end
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelected(null); // reset selection for next question
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <Timer key={currentQuestionIndex} />
-      <Text style={styles.text}>
+
+      <Text style={styles.secText}>
         Question {currentQuestionIndex + 1}
-        <Text style={styles.supportText}>/10</Text>{" "}
+        <Text style={styles.supportText}> / 10</Text>
       </Text>
+
       <Text style={styles.separator}>
         --------------------------------------------------------
       </Text>
+
       <Text style={styles.question}>{currentQuestion.question}</Text>
+
       <View style={styles.answerContainer}>
-        {currentQuestion.options.map((option, index) => (
-          <TouchableOpacity
-            onPress={() => handleSelection(index)}
-            key={index}
-            style={[styles.answers, selected === index && styles.selected]}
-          >
-            <Text style={styles.text}>{option}</Text>
-            {selected === index ? (
-              <FontAwesome name="check-circle" size={28} color="#ffff" />
-            ) : (
-              <FontAwesome name="circle-o" size={28} color="#3d4f85ff" />
-            )}
-          </TouchableOpacity>
-        ))}
+        {currentQuestion.options.map((option, index) => {
+          const isSelected = selected === index;
+          const isCorrect = option === currentQuestion.correctAnswer;
+          const showCorrect = selected !== null && isCorrect;
+          const showWrong = isSelected && !isCorrect;
+
+          return (
+            <TouchableOpacity
+              onPress={() => handleSelection(index)}
+              key={index}
+              style={[
+                styles.answers,
+                isSelected && styles.selected,
+                showCorrect && styles.correct,
+                showWrong && styles.wrong,
+              ]}
+              disabled={selected !== null} // disable after selection
+            >
+              <Text style={styles.text}>{option}</Text>
+
+              {showCorrect ? (
+                <FontAwesome name="check-circle" size={28} color="white" />
+              ) : showWrong ? (
+                <FontAwesome name="times-circle" size={28} color="white" />
+              ) : (
+                <FontAwesome name="circle-o" size={28} color="#3d4f85ff" />
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View
@@ -69,7 +91,7 @@ export default function Component() {
         {currentQuestionIndex === questions.length - 1 ? (
           <NextButton title="Check Score" />
         ) : (
-          <NextButton onPress={() => handleNext()} title="Next" />
+          <NextButton onPress={handleNext} title="Next" />
         )}
       </View>
     </SafeAreaView>
@@ -85,16 +107,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryDark,
   },
   text: {
-    fontSize: 24,
-    fontWeight: 700,
+    fontSize: 20,
+    fontWeight: "600",
     color: Colors.textPrimary,
-    opacity: 0.5,
   },
   supportText: {
     fontSize: 16,
-    fontWeight: 400,
+    fontWeight: "400",
   },
-
+  secText: {
+    opacity: 0.5,
+    fontSize: 24,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+  },
   separator: {
     height: 1,
     backgroundColor: Colors.textPrimary,
@@ -103,32 +129,35 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   question: {
-    fontSize: 30,
-    fontWeight: 700,
+    fontSize: 28,
+    fontWeight: "700",
     color: Colors.textPrimary,
     marginTop: 16,
     height: 110,
   },
   answerContainer: {
-    marginTop: 96,
+    marginTop: 64,
     width: "100%",
-    position: "fixed",
   },
   answers: {
     padding: 16,
     borderWidth: 3,
-    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-
     borderColor: "#3d4f85ff",
     alignItems: "center",
     borderRadius: 16,
     marginBottom: 12,
   },
-
   selected: {
     borderColor: "#2a8ff5ff",
-    backgroundColor: "#2a8ff5ff",
+  },
+  correct: {
+    backgroundColor: "#18a226ff",
+    borderColor: "#18a226ff",
+  },
+  wrong: {
+    backgroundColor: "#ff4d4d",
+    borderColor: "#ff4d4d",
   },
 });
