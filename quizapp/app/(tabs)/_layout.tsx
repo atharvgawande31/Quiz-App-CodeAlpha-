@@ -28,7 +28,8 @@ export default function TabLayout() {
           headerLeft: () => (
 
               <MaterialCommunityIcons
-              onPress={() => router.back()}
+              onPress={() =>
+                router.push("/")}
                 name="arrow-left"
                 size={24}
                 color="white"

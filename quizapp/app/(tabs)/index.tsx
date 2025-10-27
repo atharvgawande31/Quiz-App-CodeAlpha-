@@ -1,56 +1,171 @@
-import React, { useState } from "react";
-import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesome } from "@expo/vector-icons";
-import { data } from "@/assets/images/data/dummyData";
-import { useLocalSearchParams } from "expo-router";
-import Timer from "../components/timer";
-import NextButton from "../components/button";
-import { Colors } from "@/constants/Colors";
+import { router } from "expo-router"; // Assuming you're using Expo Router
+import Timer from "../components/timer";     // Assuming this component exists
+import NextButton from "../components/button";   // Assuming this component exists
+import { Colors } from "@/constants/Colors";     // Assuming this file exists
+import { useScore } from "@/hooks/score";       // Assuming this hook exists
+import { decode } from 'html-entities';         // Make sure to install: npm install html-entities
+
+// ✅ 1. --- Define new constants for filtering ---
+const REQUIRED_QUESTIONS = 10;
+const MAX_QUESTION_LENGTH = 120; // Max characters. Adjust this to match "3 lines" on your UI.
+const API_AMOUNT_TO_FETCH = 50;  // Fetch a larger batch to filter from
+
+// ✅ 2. --- API URL now uses the larger amount ---
+const API_URL = `https://opentdb.com/api.php?amount=${API_AMOUNT_TO_FETCH}&category=17&difficulty=easy&type=multiple`;
+
+// Helper function to shuffle answers
+const shuffleArray = (array: string[]) => {
+  return [...array].sort(() => Math.random() - 0.5);
+};
 
 export default function Component() {
-  const { id } = useLocalSearchParams();
-  const questions = data.questions;
-
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
+  const { score, setScore } = useScore();
 
-  const currentQuestion =
-    questions.find((q) => q.id === id) || questions[currentQuestionIndex];
+  useEffect(() => {
+    fetchQuestions();
+  }, []);
+
+  // ✅ 3. --- fetchQuestions is updated with filtering logic ---
+  const fetchQuestions = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(API_URL);
+      const data = await response.json();
+
+      const shortQuestions: any[] = [];
+
+      // Loop through all fetched questions
+      for (const q of data.results) {
+        // First, decode the question
+        const decodedQuestion = decode(q.question);
+
+        // Now, check its length
+        if (decodedQuestion.length <= MAX_QUESTION_LENGTH) {
+          // If it's short enough, format it and add it to our list
+          const decodedCorrectAnswer = decode(q.correct_answer);
+          const decodedIncorrectAnswers = q.incorrect_answers.map((a: string) => decode(a));
+          
+          const allOptions = shuffleArray([
+            decodedCorrectAnswer,
+            ...decodedIncorrectAnswers,
+          ]);
+
+          shortQuestions.push({
+            question: decodedQuestion,
+            options: allOptions,
+            correctAnswer: decodedCorrectAnswer,
+          });
+        }
+        
+        // Stop once we have enough short questions
+        if (shortQuestions.length === REQUIRED_QUESTIONS) {
+          break;
+        }
+      }
+
+      // Handle cases where we didn't find enough short questions
+      if (shortQuestions.length < REQUIRED_QUESTIONS) {
+        console.warn(
+          `Could not find ${REQUIRED_QUESTIONS} short questions. Found only ${shortQuestions.length}.`
+        );
+      }
+
+      setQuestions(shortQuestions); // Set state with our filtered list
+
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+      // You could add an error state here
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const currentQuestion = questions[currentQuestionIndex];
 
   function handleSelection(index: number) {
-    // Only allow one selection
-    if (selected === null) {
-      setSelected(index);
+    if (selected !== null) return; 
+
+    setSelected(index);
+    const selectedOption = currentQuestion.options[index];
+    if (selectedOption === currentQuestion.correctAnswer) {
+      setScore((prev) => prev + 1);
     }
   }
+
+  const handleCheckScore = () => {
+    router.push("/finalScore");
+  };
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelected(null); // reset selection for next question
+      setSelected(null); 
+    } else {
+      handleCheckScore();
     }
   };
 
+  // --- Render Logic (Unchanged) ---
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, styles.centerAll]}>
+        <ActivityIndicator size="large" color={Colors.textPrimary} />
+        <Text style={[styles.text, { marginTop: 10 }]}>Loading Quiz...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (!currentQuestion) {
+     return (
+      <SafeAreaView style={[styles.container, styles.centerAll]}>
+        <Text style={styles.text}>Could not find enough short questions.</Text>
+        <NextButton onPress={fetchQuestions} title="Try Again" />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <Timer key={currentQuestionIndex} />
+      <Timer key={currentQuestionIndex} duration={30} onComplete={handleNext} />
+      
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.secText}>
+            Question {currentQuestionIndex + 1}
+            <Text style={styles.supportText}> / {questions.length}</Text>
+          </Text>
+        </View>
+        <View style={styles.scoreContainer}>
+          <FontAwesome name="trophy" size={22} color="#D3AF37" />
+          <Text style={styles.scoreText}>{score}</Text>
+        </View>
+      </View>
 
-      <Text style={styles.secText}>
-        Question {currentQuestionIndex + 1}
-        <Text style={styles.supportText}> / 10</Text>
-      </Text>
-
-      <Text style={styles.separator}>
-        --------------------------------------------------------
-      </Text>
+      <View style={styles.separator} />
 
       <Text style={styles.question}>{currentQuestion.question}</Text>
 
       <View style={styles.answerContainer}>
-        {currentQuestion.options.map((option, index) => {
+        {currentQuestion.options.map((option: any, index: any) => {
           const isSelected = selected === index;
           const isCorrect = option === currentQuestion.correctAnswer;
+          
           const showCorrect = selected !== null && isCorrect;
           const showWrong = isSelected && !isCorrect;
 
@@ -64,10 +179,18 @@ export default function Component() {
                 showCorrect && styles.correct,
                 showWrong && styles.wrong,
               ]}
-              disabled={selected !== null} // disable after selection
+              disabled={selected !== null}
             >
-              <Text style={styles.text}>{option}</Text>
-
+              <Text 
+                style={[
+                  styles.text, 
+                  (showCorrect || showWrong) && styles.selectedOptionText,
+                  styles.optionTextContent 
+                ]}
+              >
+                {option}
+              </Text>
+              
               {showCorrect ? (
                 <FontAwesome name="check-circle" size={28} color="white" />
               ) : showWrong ? (
@@ -80,16 +203,9 @@ export default function Component() {
         })}
       </View>
 
-      <View
-        style={{
-          justifyContent: "center",
-          alignSelf: "center",
-          width: "50%",
-          marginTop: 16,
-        }}
-      >
+      <View style={styles.buttonContainer}>
         {currentQuestionIndex === questions.length - 1 ? (
-          <NextButton title="Check Score" />
+          <NextButton onPress={handleCheckScore} title="Check Score" />
         ) : (
           <NextButton onPress={handleNext} title="Next" />
         )}
@@ -98,22 +214,51 @@ export default function Component() {
   );
 }
 
+// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
     padding: 24,
     backgroundColor: Colors.primaryDark,
+  },
+  centerAll: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  scoreContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  scoreText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#D3AF37",
   },
   text: {
     fontSize: 20,
     fontWeight: "600",
     color: Colors.textPrimary,
   },
+  selectedOptionText: {
+    color: "white",
+    fontWeight: "700",
+  },
+  optionTextContent: {
+    flex: 1, 
+    flexWrap: 'wrap', 
+    marginRight: 10, 
+  },
   supportText: {
     fontSize: 16,
     fontWeight: "400",
+    color: Colors.textPrimary,
   },
   secText: {
     opacity: 0.5,
@@ -133,21 +278,23 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.textPrimary,
     marginTop: 16,
-    height: 110,
+    minHeight: 110,
   },
   answerContainer: {
-    marginTop: 64,
+    // I increased this from 24 to 64 for better spacing after the (potentially 3-line) question
+    marginTop: 24, 
     width: "100%",
   },
   answers: {
     padding: 16,
     borderWidth: 3,
     flexDirection: "row",
-    justifyContent: "space-between",
-    borderColor: "#3d4f85ff",
-    alignItems: "center",
+    justifyContent: "flex-start", 
+    alignItems: "center", 
+    gap: 15, 
     borderRadius: 16,
     marginBottom: 12,
+    borderColor: "#3d4f85ff",
   },
   selected: {
     borderColor: "#2a8ff5ff",
@@ -159,5 +306,11 @@ const styles = StyleSheet.create({
   wrong: {
     backgroundColor: "#ff4d4d",
     borderColor: "#ff4d4d",
+  },
+  buttonContainer: {
+    justifyContent: "center",
+    alignSelf: "center",
+    width: "50%",
+    marginTop: 16,
   },
 });

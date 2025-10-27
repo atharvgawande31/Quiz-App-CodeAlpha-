@@ -1,103 +1,113 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome } from '@expo/vector-icons';// Using Feather icons
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, StyleSheet, Animated } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { FontAwesome } from "@expo/vector-icons";
 
-const DURATION = 30; // The total time for the countdown
+interface TimerProps {
+  duration?: number;
+  onComplete?: () => void;
+}
 
-const Timer = ({ onComplete  } : any) => {
-  const [timeLeft, setTimeLeft] = useState(DURATION);
-  // Use useRef for the animation value to prevent re-renders
+const Timer: React.FC<TimerProps> = ({ duration = 30, onComplete }) => {
+  const [timeLeft, setTimeLeft] = useState(duration);
   const progressAnim = useRef(new Animated.Value(100)).current;
 
   useEffect(() => {
-    // Start the interval when the component mounts
+    // Reset time whenever duration changes
+    setTimeLeft(duration);
+    progressAnim.setValue(100);
+
     const interval = setInterval(() => {
-      setTimeLeft(prevTime => {
+      setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(interval);
-          if (onComplete) {
-            onComplete(); // Callback when time is up
-          }
+          onComplete?.(); // ✅ Trigger when timer ends
           return 0;
         }
         return prevTime - 1;
       });
     }, 1000);
 
-    // Cleanup: clear the interval when the component unmounts
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, [duration]);
 
+  // Animate the progress bar as time decreases
   useEffect(() => {
-    // Animate the progress bar width whenever timeLeft changes
-    const percentage = (timeLeft / DURATION) * 100;
+    const percentage = (timeLeft / duration) * 100;
     Animated.timing(progressAnim, {
       toValue: percentage,
-      duration: 500, // A short duration for a smooth update
-      useNativeDriver: false, // 'width' is not supported by native driver
+      duration: 500,
+      useNativeDriver: false,
     }).start();
-  }, [timeLeft, progressAnim]);
+  }, [timeLeft]);
 
-  // Interpolate the Animated.Value to a width string (e.g., '100%')
   const animatedWidth = progressAnim.interpolate({
     inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
+    outputRange: ["0%", "100%"],
   });
 
   return (
     <View style={styles.container}>
+      {/* Progress animation */}
       <Animated.View style={[styles.progressBar, { width: animatedWidth }]}>
         <LinearGradient
-          colors={['#ff4b8d', '#6a2c9b']}
+          colors={["#ff4b8d", "#6a2c9b"]}
           style={styles.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         />
       </Animated.View>
-      <View style={{flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8}}>
-         <Text style={styles.timeText}>{timeLeft}</Text>
-            <FontAwesome style={{position: "absolute", left: 140}} name="clock-o" size={28} color="#d8e2ffff" />
 
+      {/* Timer text & icon */}
+      <View style={styles.timerContent}>
+        <Text style={styles.timeText}>{timeLeft}</Text>
+        <FontAwesome
+          style={styles.icon}
+          name="clock-o"
+          size={24}
+          color="#d8e2ff"
+        />
       </View>
-     
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    width: "100%",
     marginBottom: 36,
     marginTop: 20,
     height: 40,
-    backgroundColor: '#3a3f5a',
+    backgroundColor: "#3a3f5a",
     borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-    position: "relative"
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    position: "relative",
   },
   progressBar: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     top: 0,
-    height: '100%',
+    height: "100%",
   },
   gradient: {
     flex: 1,
     borderRadius: 20,
   },
+  timerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    zIndex: 1,
+  },
   timeText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-    zIndex: 1, // Ensure text is above the progress bar
+    color: "white",
+    fontSize: 22,
+    fontWeight: "bold",
   },
   icon: {
-    position: 'absolute',
-    right: 15,
-    zIndex: 1,
+    marginLeft: 6,
   },
 });
 

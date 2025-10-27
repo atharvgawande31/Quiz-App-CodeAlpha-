@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // Sample category data
 const categories = [
@@ -17,11 +18,12 @@ export default function CategoriesScreen() {
 
   const handleCategoryPress = () => {
     // Navigate to another screen or pass category as param
-    router.replace("/(tabs)");
+    router.push("../");
+    
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Choose a Category</Text>
 
       <FlatList
@@ -38,7 +40,7 @@ export default function CategoriesScreen() {
           </TouchableOpacity>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
