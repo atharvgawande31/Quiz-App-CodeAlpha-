@@ -1,12 +1,140 @@
-import { View, Text } from "react-native";
-import { useScore } from "@/hooks/score";
+import React, { useState } from "react"; // 1. Import useState
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { FontAwesome } from "@expo/vector-icons";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useScore } from "@/hooks/score"; 
+// 2. Import the new confetti library
+import ConfettiCannon from "react-native-confetti-cannon";
+
+// 3. Define Colors with a VIVID gold
+const Colors = {
+  primaryDark: "#0f172a",
+  textPrimary: "#ffffff",
+  gold: "#FFD700", // <-- More vivid gold! (was #D3AF37)
+  selected: "#2a8ff5ff",
+};
+
+// Button Component (copied from your last version)
+const NextButton = ({ onPress, title, secondary = false }) => (
+  <TouchableOpacity 
+    onPress={onPress} 
+    style={[styles.button, secondary ? styles.secondaryButton : styles.primaryButton]}
+  >
+    <Text style={[styles.buttonText, secondary && styles.secondaryButtonText]}>{title}</Text>
+  </TouchableOpacity>
+);
 
 export default function FinalScorePage() {
-  const { score, setScore } = useScore();
+  const router = useRouter();
+  const { score } = useScore();
+  const { category } = useLocalSearchParams();
+  
+  // 4. State to control the animation sequence
+  // We'll show the confetti first, then the score
+  const [showScore, setShowScore] = useState(false);
+
+  const handleRestart = () => {
+    router.replace(`/profile?category=${category}`);
+  };
+
+  const handleGoHome = () => {
+    router.replace("/");
+  };
 
   return (
-    <View>
-      <Text style={{fontSize: 48}}>{score}</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      
+      {/* 5. The Confetti Cannon */}
+      {!showScore && (
+        <ConfettiCannon
+          count={500} // How many confetti pieces
+          origin={{ x: -10, y: 0 }} // Start from the top-left corner
+          autoStart={true}
+          fadeOut={true} // Fade out the confetti
+          // When the animation is done, show the score
+          onAnimationEnd={() => setShowScore(true)} 
+        />
+      )}
+
+      {/* 6. The Score Content */}
+      {/* This View only appears AFTER the animation is done */}
+      {showScore && (
+        <View style={styles.contentContainer}>
+          <Text style={styles.header}>Quiz Complete!</Text>
+
+          <FontAwesome name="trophy" size={150} color={Colors.gold} />
+
+          <Text style={styles.scoreLabel}>Your Final Score</Text>
+          <Text style={styles.scoreText}>{score}</Text>
+
+          <View style={styles.buttonContainer}>
+            <NextButton onPress={handleRestart} title="Play Again" />
+            <NextButton onPress={handleGoHome} title="Categories" secondary={true} />
+          </View>
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
+
+// 7. Updated Styles
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.primaryDark,
+    padding: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  // New container for the content
+  contentContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+  },
+  header: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+    marginBottom: 40,
+    textAlign: "center",
+  },
+  scoreLabel: {
+    fontSize: 24,
+    color: Colors.textPrimary,
+    opacity: 0.7,
+    marginTop: 40,
+  },
+  scoreText: {
+    fontSize: 72,
+    fontWeight: "bold",
+    color: Colors.gold, // Will now use the vivid #FFD700
+    marginBottom: 50,
+  },
+  buttonContainer: {
+    width: "80%",
+    gap: 15,
+  },
+  button: {
+    padding: 15,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  primaryButton: {
+    backgroundColor: Colors.selected,
+  },
+  secondaryButton: {
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    borderColor: Colors.selected,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+  secondaryButtonText: {
+    color: Colors.selected,
+  },
+});

@@ -1,26 +1,105 @@
-import React from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+// app/index.js
+
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FontAwesome } from "@expo/vector-icons";
 
-// Sample category data
-const categories = [
-  { id: "1", name: "Science", color: "#FF6B6B" },
-  { id: "2", name: "History", color: "#4ECDC4" },
-  { id: "3", name: "Technology", color: "#FFD93D" },
-  { id: "4", name: "Sports", color: "#1A535C" },
-  { id: "5", name: "Art", color: "#FF9F1C" },
-  { id: "6", name: "Music", color: "#2EC4B6" },
-];
+// --- Style Map (Unchanged) ---
+const categoryStyles = {
+  9: { icon: "globe", color: "#4E89AE" },
+  10: { icon: "book", color: "#C0392B" },
+  11: { icon: "film", color: "#2C3E50" },
+  12: { icon: "music", color: "#8E44AD" },
+  14: { icon: "tv", color: "#2980B9" },
+  15: { icon: "gamepad", color: "#D35400" },
+  17: { icon: "flask", color: "#27AE60" },
+  18: { icon: "laptop", color: "#3498DB" },
+  21: { icon: "futbol-o", color: "#16A085" },
+  22: { icon: "map-marker", color: "#F1C40F" },
+  23: { icon: "hourglass-start", color: "#795548" },
+  25: { icon: "paint-brush", color: "#E74C3C" },
+  27: { icon: "paw", color: "#6D4C41" },
+  default: { icon: "question-circle", color: "#7F8C8D" },
+};
+
+const getCategoryStyle = (id: number) => {
+  return categoryStyles[id] || categoryStyles.default;
+};
+
+// --- API (Unchanged) ---
+const CATEGORY_API = "https://opentdb.com/api_category.php";
+
+// ✅ 1. --- Define types for your state ---
+interface ApiCategory {
+  id: number;
+  name: string;
+}
+
+interface StyledCategory extends ApiCategory {
+  icon: string;
+  color: string;
+  displayName: string;
+}
 
 export default function CategoriesScreen() {
   const router = useRouter();
+  
+  // ✅ 2. --- Use the 'StyledCategory' type for state ---
+  const [categories, setCategories] = useState<StyledCategory[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleCategoryPress = () => {
-    // Navigate to another screen or pass category as param
-    router.push("../");
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(CATEGORY_API);
+        const data: { trivia_categories: ApiCategory[] } = await response.json();
+        
+        const styledCategories = data.trivia_categories.map((cat) => {
+          const style = getCategoryStyle(cat.id);
+          return {
+            ...cat,
+            icon: style.icon,
+            color: style.color,
+            displayName: cat.name.replace("Entertainment: ", "").replace("Science: ", ""),
+          };
+        });
+        
+        setCategories(styledCategories);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
+    fetchCategories();
+  }, []);
+
+  // ✅ 3. --- Fix the 'handleCategoryPress' errors ---
+  const handleCategoryPress = (categoryId: number) => {
+    // TypeScript prefers a simple string for 'push'
+    // This solves the 'pathname' and 'params' type errors.
+    router.push(`/profile?category=${categoryId}`);
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+        <Text style={styles.loadingText}>Loading Categories...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -28,15 +107,16 @@ export default function CategoriesScreen() {
 
       <FlatList
         data={categories}
-        numColumns={2} // Two columns layout
-        keyExtractor={(item) => item.id}
+        numColumns={2}
+        keyExtractor={(item) => item.id.toString()}
         columnWrapperStyle={{ justifyContent: "space-between" }}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.card, { backgroundColor: item.color }]}
-            onPress={() => handleCategoryPress()}
+            onPress={() => handleCategoryPress(item.id)} // This now correctly passes a number
           >
-            <Text style={styles.cardText}>{item.name}</Text>
+            <FontAwesome name={item.icon as any} size={32} color="#FFFFFF" />
+            <Text style={styles.cardText}>{item.displayName}</Text>
           </TouchableOpacity>
         )}
       />
@@ -44,6 +124,7 @@ export default function CategoriesScreen() {
   );
 }
 
+// --- Styles (Unchanged) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -67,10 +148,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     marginHorizontal: 4,
     elevation: 3,
+    gap: 10,
+    padding: 10,
   },
   cardText: {
     fontSize: 18,
     fontWeight: "600",
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
     color: "#FFFFFF",
   },
 });
