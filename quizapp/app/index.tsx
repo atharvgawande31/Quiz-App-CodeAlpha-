@@ -12,8 +12,10 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesome } from "@expo/vector-icons";
+import { Colors } from "@/constants/Colors"; // Assuming this file exists
 
 // --- Style Map (Unchanged) ---
+// This map now acts as our filter. Only categories in this list will be shown.
 const categoryStyles = {
   9: { icon: "globe", color: "#4E89AE" },
   10: { icon: "book", color: "#C0392B" },
@@ -26,19 +28,19 @@ const categoryStyles = {
   21: { icon: "futbol-o", color: "#16A085" },
   22: { icon: "map-marker", color: "#F1C40F" },
   23: { icon: "hourglass-start", color: "#795548" },
-  25: { icon: "paint-brush", color: "#E74C3C" },
-  27: { icon: "paw", color: "#6D4C41" },
+  27: { icon: "paw", color: "#324285ff" },
   default: { icon: "question-circle", color: "#7F8C8D" },
 };
 
+// getCategoryStyle function (Unchanged)
 const getCategoryStyle = (id: number) => {
-  return categoryStyles[id] || categoryStyles.default;
+  const key = id.toString() as keyof typeof categoryStyles;
+  return categoryStyles[key] || categoryStyles.default;
 };
 
 // --- API (Unchanged) ---
 const CATEGORY_API = "https://opentdb.com/api_category.php";
 
-// ✅ 1. --- Define types for your state ---
 interface ApiCategory {
   id: number;
   name: string;
@@ -53,18 +55,26 @@ interface StyledCategory extends ApiCategory {
 export default function CategoriesScreen() {
   const router = useRouter();
   
-  // ✅ 2. --- Use the 'StyledCategory' type for state ---
   const [categories, setCategories] = useState<StyledCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // ✅ --- LOGIC CHANGE IS HERE ---
     const fetchCategories = async () => {
       try {
         setIsLoading(true);
         const response = await fetch(CATEGORY_API);
         const data: { trivia_categories: ApiCategory[] } = await response.json();
         
-        const styledCategories = data.trivia_categories.map((cat) => {
+        // 1. Filter the categories to only include ones from our style map
+        const filteredCategories = data.trivia_categories.filter((cat) => {
+          const key = cat.id.toString() as keyof typeof categoryStyles;
+          // Check if the key exists AND it's not the 'default' key
+          return categoryStyles.hasOwnProperty(key) && key !== 'default';
+        });
+
+        // 2. Map the *filtered* list to add styles and formatted names
+        const styledCategories = filteredCategories.map((cat) => {
           const style = getCategoryStyle(cat.id);
           return {
             ...cat,
@@ -81,23 +91,22 @@ export default function CategoriesScreen() {
         setIsLoading(false);
       }
     };
+    // --- END OF LOGIC CHANGE ---
     
     fetchCategories();
   }, []);
 
-  // ✅ 3. --- Fix the 'handleCategoryPress' errors ---
   const handleCategoryPress = (categoryId: number) => {
-    // TypeScript prefers a simple string for 'push'
-    // This solves the 'pathname' and 'params' type errors.
+    // I'm assuming your quiz page is at '/quiz' based on our previous chat
     router.push(`/profile?category=${categoryId}`);
   };
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: "center" }]}>
-        <ActivityIndicator size="large" color="#FFFFFF" />
-        <Text style={styles.loadingText}>Loading Categories...</Text>
-      </SafeAreaView>
+       <SafeAreaView style={[styles.container, styles.centerAll]}>
+           <ActivityIndicator size="large" color={Colors.textPrimary} />
+           <Text style={[styles.text, { marginTop: 10 }]}>Loading Categories...</Text>
+         </SafeAreaView>
     );
   }
 
@@ -113,7 +122,7 @@ export default function CategoriesScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={[styles.card, { backgroundColor: item.color }]}
-            onPress={() => handleCategoryPress(item.id)} // This now correctly passes a number
+            onPress={() => handleCategoryPress(item.id)}
           >
             <FontAwesome name={item.icon as any} size={32} color="#FFFFFF" />
             <Text style={styles.cardText}>{item.displayName}</Text>
@@ -162,4 +171,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#FFFFFF",
   },
+    centerAll: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+    text: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+  }
 });

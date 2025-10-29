@@ -16,7 +16,13 @@ const Colors = {
 };
 
 // Button Component (copied from your last version)
-const NextButton = ({ onPress, title, secondary = false }) => (
+type NextButtonProps = {
+  onPress: () => void;
+  title: string;
+  secondary?: boolean;
+};
+
+const NextButton: React.FC<NextButtonProps> = ({ onPress, title, secondary = false }) => (
   <TouchableOpacity 
     onPress={onPress} 
     style={[styles.button, secondary ? styles.secondaryButton : styles.primaryButton]}
