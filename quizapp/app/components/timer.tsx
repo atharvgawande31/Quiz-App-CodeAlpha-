@@ -75,8 +75,7 @@ const Timer: React.FC<TimerProps> = ({ duration = 30, onComplete }) => {
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    marginBottom: 36,
-    marginTop: 20,
+    marginBottom: 24,
     height: 40,
     backgroundColor: "#3a3f5a",
     borderRadius: 20,

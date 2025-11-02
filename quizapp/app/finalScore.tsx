@@ -3,31 +3,38 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useScore } from "@/hooks/score"; 
-// 2. Import the new confetti library
+import { useScore } from "@/hooks/score";
+import { supabase } from "@/lib/supabse";
 import ConfettiCannon from "react-native-confetti-cannon";
 
-// 3. Define Colors with a VIVID gold
 const Colors = {
   primaryDark: "#0f172a",
   textPrimary: "#ffffff",
-  gold: "#FFD700", // <-- More vivid gold! (was #D3AF37)
+  gold: "#FFD700",
   selected: "#2a8ff5ff",
 };
 
-// Button Component (copied from your last version)
 type NextButtonProps = {
   onPress: () => void;
   title: string;
   secondary?: boolean;
 };
 
-const NextButton: React.FC<NextButtonProps> = ({ onPress, title, secondary = false }) => (
-  <TouchableOpacity 
-    onPress={onPress} 
-    style={[styles.button, secondary ? styles.secondaryButton : styles.primaryButton]}
+const NextButton: React.FC<NextButtonProps> = ({
+  onPress,
+  title,
+  secondary = false,
+}) => (
+  <TouchableOpacity
+    onPress={onPress}
+    style={[
+      styles.button,
+      secondary ? styles.secondaryButton : styles.primaryButton,
+    ]}
   >
-    <Text style={[styles.buttonText, secondary && styles.secondaryButtonText]}>{title}</Text>
+    <Text style={[styles.buttonText, secondary && styles.secondaryButtonText]}>
+      {title}
+    </Text>
   </TouchableOpacity>
 );
 
@@ -35,36 +42,40 @@ export default function FinalScorePage() {
   const router = useRouter();
   const { score } = useScore();
   const { category } = useLocalSearchParams();
-  
-  // 4. State to control the animation sequence
-  // We'll show the confetti first, then the score
+
   const [showScore, setShowScore] = useState(false);
 
   const handleRestart = () => {
-    router.replace(`/profile?category=${category}`);
+    router.push(`/quiz?category=${category}`);
   };
 
   const handleGoHome = () => {
-    router.replace("/");
+    router.push("/");
   };
+
+  const handleLogOut = () => {
+    const logout = supabase.auth.signOut();
+    router.replace("/auth/login");
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      
-      {/* 5. The Confetti Cannon */}
       {!showScore && (
         <ConfettiCannon
-          count={500} // How many confetti pieces
-          origin={{ x: -10, y: 0 }} // Start from the top-left corner
+          count={150} 
+          origin={{ x: 0.5, y: -0.1 }} 
           autoStart={true}
-          fadeOut={true} // Fade out the confetti
-          // When the animation is done, show the score
-          onAnimationEnd={() => setShowScore(true)} 
+          fadeOut={true}
+          onAnimationEnd={() => setShowScore(true)}
+          explosionSpeed={400} 
+          fallSpeed={3000} 
+          gravity={0.4} 
+          angle={90} 
+          spread={70} 
+          colors={["#a864fd", "#29cdff", "#78ff44", "#ff718d", "#fdff6a"]} 
         />
       )}
 
-      {/* 6. The Score Content */}
-      {/* This View only appears AFTER the animation is done */}
       {showScore && (
         <View style={styles.contentContainer}>
           <Text style={styles.header}>Quiz Complete!</Text>
@@ -72,11 +83,17 @@ export default function FinalScorePage() {
           <FontAwesome name="trophy" size={150} color={Colors.gold} />
 
           <Text style={styles.scoreLabel}>Your Final Score</Text>
+
           <Text style={styles.scoreText}>{score}</Text>
 
           <View style={styles.buttonContainer}>
             <NextButton onPress={handleRestart} title="Play Again" />
-            <NextButton onPress={handleGoHome} title="Categories" secondary={true} />
+            <NextButton
+              onPress={handleGoHome}
+              title="Categories"
+              secondary={true}
+            />
+            <NextButton onPress={handleLogOut} title="Log Out"/>
           </View>
         </View>
       )}

@@ -59,21 +59,18 @@ export default function CategoriesScreen() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // ✅ --- LOGIC CHANGE IS HERE ---
+
     const fetchCategories = async () => {
       try {
         setIsLoading(true);
         const response = await fetch(CATEGORY_API);
         const data: { trivia_categories: ApiCategory[] } = await response.json();
         
-        // 1. Filter the categories to only include ones from our style map
         const filteredCategories = data.trivia_categories.filter((cat) => {
           const key = cat.id.toString() as keyof typeof categoryStyles;
-          // Check if the key exists AND it's not the 'default' key
           return categoryStyles.hasOwnProperty(key) && key !== 'default';
         });
 
-        // 2. Map the *filtered* list to add styles and formatted names
         const styledCategories = filteredCategories.map((cat) => {
           const style = getCategoryStyle(cat.id);
           return {
@@ -98,7 +95,7 @@ export default function CategoriesScreen() {
 
   const handleCategoryPress = (categoryId: number) => {
     // I'm assuming your quiz page is at '/quiz' based on our previous chat
-    router.push(`/profile?category=${categoryId}`);
+    router.push(`/quiz?category=${categoryId}`);
   };
 
   if (isLoading) {
@@ -111,7 +108,7 @@ export default function CategoriesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.header}>Choose a Category</Text>
 
       <FlatList
@@ -129,7 +126,7 @@ export default function CategoriesScreen() {
           </TouchableOpacity>
         )}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -145,6 +142,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "700",
     color: "#FFFFFF",
+    marginTop: 48,
     marginBottom: 24,
     textAlign: "center",
   },

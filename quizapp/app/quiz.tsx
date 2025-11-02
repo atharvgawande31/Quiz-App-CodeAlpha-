@@ -1,126 +1,161 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Text,
   View,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesome } from "@expo/vector-icons";
-import { router } from "expo-router"; // Assuming you're using Expo Router
-import Timer from "../components/timer";     // Assuming this component exists
-import NextButton from "../components/button";   // Assuming this component exists
-import { Colors } from "@/constants/Colors";     // Assuming this file exists
-import { useScore } from "@/hooks/score";       // Assuming this hook exists
-import { decode } from 'html-entities';         // Make sure to install: npm install html-entities
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
+import Timer from "./components/timer";
+import NextButton from "./components/button";
+import { Colors } from "@/constants/Colors";
+import { useScore } from "@/hooks/score";
+import { decode } from "html-entities";
 
-// ✅ 1. --- Define new constants for filtering ---
-const REQUIRED_QUESTIONS = 10;
-const MAX_QUESTION_LENGTH = 120; // Max characters. Adjust this to match "3 lines" on your UI.
-const API_AMOUNT_TO_FETCH = 50;  // Fetch a larger batch to filter from
+// --- Type Definitions ---
 
-// ✅ 2. --- API URL now uses the larger amount ---
-const API_URL = `https://opentdb.com/api.php?amount=${API_AMOUNT_TO_FETCH}&category=17&difficulty=easy&type=multiple`;
+interface OpenTDBQuestion {
+  category: string;
+  type: string;
+  difficulty: string;
+  question: string;
+  correct_answer: string;
+  incorrect_answers: string[];
+}
 
-// Helper function to shuffle answers
-const shuffleArray = (array: string[]) => {
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: string;
+}
+
+type QuizParams = {
+  category?: string;
+};
+
+interface ScoreContextType {
+  score: number;
+  setScore: React.Dispatch<React.SetStateAction<number>>;
+}
+
+// --- Helper Function ---
+
+const shuffleArray = (array: string[]): string[] => {
   return [...array].sort(() => Math.random() - 0.5);
 };
 
-export default function Component() {
-  const [questions, setQuestions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+// --- No more sessionToken variable ---
+
+export default function QuizComponent() {
+  // --- State and Hooks ---
+  const { category } = useLocalSearchParams<QuizParams>();
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [selected, setSelected] = useState<number | null>(null);
-  const { score, setScore } = useScore();
+  const { score, setScore } = useScore() as ScoreContextType;
 
-  useEffect(() => {
-    fetchQuestions();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      if (!category) return;
 
-  // ✅ 3. --- fetchQuestions is updated with filtering logic ---
-  const fetchQuestions = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(API_URL);
-      const data = await response.json();
+      // --- Token fetch function is removed ---
 
-      const shortQuestions: any[] = [];
+      const fetchQuestions = async () => {
+        setIsLoading(true);
+        setQuestions([]);
+        setCurrentQuestionIndex(0);
+        setSelected(null);
+        setScore(0);
 
-      // Loop through all fetched questions
-      for (const q of data.results) {
-        // First, decode the question
-        const decodedQuestion = decode(q.question);
+        try {
+          // --- No token logic ---
 
-        // Now, check its length
-        if (decodedQuestion.length <= MAX_QUESTION_LENGTH) {
-          // If it's short enough, format it and add it to our list
-          const decodedCorrectAnswer = decode(q.correct_answer);
-          const decodedIncorrectAnswers = q.incorrect_answers.map((a: string) => decode(a));
-          
-          const allOptions = shuffleArray([
-            decodedCorrectAnswer,
-            ...decodedIncorrectAnswers,
-          ]);
+          // Build API URL without difficulty or token
+          const API_URL = `https://opentdb.com/api.php?amount=10&category=${category}&type=multiple`;
 
-          shortQuestions.push({
-            question: decodedQuestion,
-            options: allOptions,
-            correctAnswer: decodedCorrectAnswer,
-          });
+          let response = await fetch(API_URL);
+          let data = await response.json();
+
+          // --- Token retry logic is removed ---
+
+          // Handle final API response codes
+          if (data.response_code !== 0) {
+            console.warn(
+              "Could not retrieve questions. Final response code:",
+              data.response_code
+            );
+            setQuestions([]); 
+          } else {
+            // Process successful response
+            const formattedQuestions: QuizQuestion[] = data.results.map(
+              (q: OpenTDBQuestion) => {
+                const decodedQuestion = decode(q.question);
+                const decodedCorrectAnswer = decode(q.correct_answer);
+                const decodedIncorrectAnswers = q.incorrect_answers.map(
+                  (a: string) => decode(a)
+                );
+
+                const allOptions = shuffleArray([
+                  decodedCorrectAnswer,
+                  ...decodedIncorrectAnswers,
+                ]);
+
+                return {
+                  question: decodedQuestion,
+                  options: allOptions,
+                  correctAnswer: decodedCorrectAnswer,
+                };
+              }
+            );
+            setQuestions(formattedQuestions);
+          }
+        } catch (error) {
+          console.error("Error fetching questions:", error);
+          setQuestions([]); 
+        } finally {
+          setIsLoading(false);
         }
-        
-        // Stop once we have enough short questions
-        if (shortQuestions.length === REQUIRED_QUESTIONS) {
-          break;
-        }
-      }
+      };
 
-      // Handle cases where we didn't find enough short questions
-      if (shortQuestions.length < REQUIRED_QUESTIONS) {
-        console.warn(
-          `Could not find ${REQUIRED_QUESTIONS} short questions. Found only ${shortQuestions.length}.`
-        );
-      }
+      fetchQuestions();
 
-      setQuestions(shortQuestions); // Set state with our filtered list
-
-    } catch (error) {
-      console.error("Error fetching questions:", error);
-      // You could add an error state here
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    }, [category, setScore])
+  );
 
   const currentQuestion = questions[currentQuestionIndex];
 
-  function handleSelection(index: number) {
-    if (selected !== null) return; 
+  // --- Event Handlers ---
 
+  function handleSelection(index: number): void {
+    if (selected !== null) return; 
     setSelected(index);
     const selectedOption = currentQuestion.options[index];
     if (selectedOption === currentQuestion.correctAnswer) {
-      setScore((prev) => prev + 1);
+      setScore((prev: number) => prev + 1);
     }
   }
 
-  const handleCheckScore = () => {
-    router.push("/finalScore");
+  const handleCheckScore = (): void => {
+    router.push({
+      pathname: "/finalScore",
+      params: { category: category },
+    });
   };
 
-  const handleNext = () => {
+  const handleNext = (): void => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelected(null); 
+      setSelected(null);
     } else {
       handleCheckScore();
     }
   };
 
-  // --- Render Logic (Unchanged) ---
+  // --- Render Logic ---
 
   if (isLoading) {
     return (
@@ -131,19 +166,22 @@ export default function Component() {
     );
   }
 
-  if (!currentQuestion) {
-     return (
+  if (!currentQuestion || questions.length === 0) {
+    return (
       <SafeAreaView style={[styles.container, styles.centerAll]}>
-        <Text style={styles.text}>Could not find enough short questions.</Text>
-        <NextButton onPress={fetchQuestions} title="Try Again" />
+        <Text style={[styles.text, { textAlign: "center" }]}>
+          Could not load questions for this category. Please try again.
+        </Text>
+        <NextButton onPress={() => router.back()} title="Try Another Category" />
       </SafeAreaView>
     );
   }
 
+  // Use SafeAreaView for the main quiz view as well
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <Timer key={currentQuestionIndex} duration={30} onComplete={handleNext} />
-      
+
       <View style={styles.header}>
         <View>
           <Text style={styles.secText}>
@@ -162,10 +200,10 @@ export default function Component() {
       <Text style={styles.question}>{currentQuestion.question}</Text>
 
       <View style={styles.answerContainer}>
-        {currentQuestion.options.map((option: any, index: any) => {
+        {currentQuestion.options.map((option: string, index: number) => {
           const isSelected = selected === index;
           const isCorrect = option === currentQuestion.correctAnswer;
-          
+
           const showCorrect = selected !== null && isCorrect;
           const showWrong = isSelected && !isCorrect;
 
@@ -181,16 +219,16 @@ export default function Component() {
               ]}
               disabled={selected !== null}
             >
-              <Text 
+              <Text
                 style={[
-                  styles.text, 
+                  styles.text,
                   (showCorrect || showWrong) && styles.selectedOptionText,
-                  styles.optionTextContent 
+                  styles.optionTextContent,
                 ]}
               >
                 {option}
               </Text>
-              
+
               {showCorrect ? (
                 <FontAwesome name="check-circle" size={28} color="white" />
               ) : showWrong ? (
@@ -210,20 +248,24 @@ export default function Component() {
           <NextButton onPress={handleNext} title="Next" />
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
-// --- Styles ---
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     backgroundColor: Colors.primaryDark,
   },
   centerAll: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.primaryDark,
+    padding: 30,
   },
   header: {
     flexDirection: "row",
@@ -251,9 +293,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   optionTextContent: {
-    flex: 1, 
-    flexWrap: 'wrap', 
-    marginRight: 10, 
+    flex: 1,
+    flexWrap: "wrap",
+    marginRight: 10,
   },
   supportText: {
     fontSize: 16,
@@ -281,17 +323,16 @@ const styles = StyleSheet.create({
     minHeight: 110,
   },
   answerContainer: {
-    // I increased this from 24 to 64 for better spacing after the (potentially 3-line) question
-    marginTop: 24, 
+    marginTop: 24,
     width: "100%",
   },
   answers: {
     padding: 16,
     borderWidth: 3,
     flexDirection: "row",
-    justifyContent: "flex-start", 
-    alignItems: "center", 
-    gap: 15, 
+    justifyContent: "flex-start",
+    alignItems: "center",
+    gap: 15,
     borderRadius: 16,
     marginBottom: 12,
     borderColor: "#3d4f85ff",
