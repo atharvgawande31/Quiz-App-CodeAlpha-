@@ -13,6 +13,7 @@ import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabse"; // make sure you have Supabase client setup
 import { Colors } from "@/constants/Colors";
 import { FontAwesome } from "@expo/vector-icons";
+import NextButton from "../components/button";
 import SplashScreenController from "../components/splash-screen-controller";
 
 export default function LoginScreen() {
@@ -24,7 +25,10 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     try {
       setError("");
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       if (error) throw error;
       router.replace("/");
     } catch (err: any) {
@@ -35,39 +39,38 @@ export default function LoginScreen() {
   };
 
   const handleGoogleLogin = async () => {
-  try {
-    setLoading(true);
-    setError("");
-    await WebBrowser.dismissBrowser();
+    try {
+      setLoading(true);
+      setError("");
 
-    const redirectTo = Linking.createURL("/auth/callback"); 
+      const redirectTo = Linking.createURL("/auth/callback");
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-        skipBrowserRedirect: true, 
-      },
-    });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true,
+        },
+      });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    if (data?.url) {
-      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
-      if (res.type === "success" && res.url) {
-        const { data: sessionData, error: sessionError } =
-          await supabase.auth.exchangeCodeForSession(res.url);
-        if (sessionError) throw sessionError;
-        router.replace("/"); 
+      if (data?.url) {
+        const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+        if (res.type === "success" && res.url) {
+          const { data: sessionData, error: sessionError } =
+            await supabase.auth.exchangeCodeForSession(res.url);
+          if (sessionError) throw sessionError;
+          router.replace("/");
+        }
       }
+    } catch (err) {
+      console.error("Google login error:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error("Google login error:", err);
-    const message = err instanceof Error ? err.message : String(err);
-    setError(message);
-  } finally {
-    setLoading(false);
-  }
   };
 
   return (
@@ -96,25 +99,27 @@ export default function LoginScreen() {
           onChangeText={setPassword}
         />
 
-        <Pressable style={styles.button} onPress={handleLogin} disabled={loading}>
+        <NextButton
+          isLoading={<ActivityIndicator />}
+          onPress={() => handleLogin()}
+          title="Login"
+        />
+
+        <Text style={{ color: "white", paddingTop: 12, fontSize: 20 }}>or</Text>
+
+        <Pressable
+          style={styles.googleButton}
+          onPress={handleGoogleLogin}
+          disabled={loading}
+        >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Login</Text>
+            <>
+              <FontAwesome name="google" size={20} color="#fff" />
+              <Text style={styles.googleText}>Sign in with Google</Text>
+            </>
           )}
-        </Pressable>
-
-        <Pressable style={styles.googleButton} onPress={handleGoogleLogin} disabled={loading}>
-            {loading ? (
-                <ActivityIndicator color="#fff" />
-            ) : (
-                <>
-          <FontAwesome name="google" size={20} color="#fff" />
-          <Text style={styles.googleText}>Sign in with Google</Text>
-          </>
-            )
-        }
-            
         </Pressable>
 
         <View style={styles.bottomText}>

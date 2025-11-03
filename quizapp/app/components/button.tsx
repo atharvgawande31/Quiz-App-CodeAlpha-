@@ -2,7 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';// import { LinearGradient } from 'expo-linear-gradient'; // For Expo projects
 
-const NextButton = ({ onPress, title = 'Next' } : any) => {
+const NextButton = ({ onPress, title = 'Next',  } : any) => {
   return (
     <TouchableOpacity style={styles.buttonContainer} onPress={onPress}>
       {/* Using LinearGradient for the background effect.
@@ -10,7 +10,7 @@ const NextButton = ({ onPress, title = 'Next' } : any) => {
         or 'expo-linear-gradient' based on your project type.
       */}
       <LinearGradient
-        colors={['#007bff', '#3399ffff']} // Blue gradient colors
+        colors={['#efc631ff', '#ffd333ff']} // Blue gradient colors
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.gradient}
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 20,
     fontWeight: 'bold',
   },
