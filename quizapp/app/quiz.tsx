@@ -9,8 +9,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesome } from "@expo/vector-icons";
 import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
-import Timer from "./components/timer";
-import NextButton from "./components/button";
+import Timer from "@/component/timer";
+import { Button } from "@/component/button";
 import { Colors } from "@/constants/Colors";
 import { useScore } from "@/hooks/score";
 import { decode } from "html-entities";
@@ -172,7 +172,7 @@ export default function QuizComponent() {
         <Text style={[styles.text, { textAlign: "center" }]}>
           Could not load questions for this category. Please try again.
         </Text>
-        <NextButton onPress={() => router.back()} title="Try Another Category" />
+        <Button onPress={() => router.back()} title="Try Another Category" />
       </SafeAreaView>
     );
   }
@@ -243,9 +243,9 @@ export default function QuizComponent() {
 
       <View style={styles.buttonContainer}>
         {currentQuestionIndex === questions.length - 1 ? (
-          <NextButton onPress={handleCheckScore} title="Check Score" />
+          <Button onPress={handleCheckScore} title="Check Score" />
         ) : (
-          <NextButton onPress={handleNext} title="Next" />
+          <Button colorScheme="accent" onPress={handleNext} title="Next" />
         )}
       </View>
     </View>
@@ -258,13 +258,13 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: Colors.backgroundDark,
   },
   centerAll: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: Colors.backgroundDark,
     padding: 30,
   },
   header: {
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 20,
     fontWeight: "600",
-    color: Colors.textPrimary,
+    color: Colors.textLight,
   },
   selectedOptionText: {
     color: "white",
@@ -300,25 +300,25 @@ const styles = StyleSheet.create({
   supportText: {
     fontSize: 16,
     fontWeight: "400",
-    color: Colors.textPrimary,
+    color: Colors.textLight,
   },
   secText: {
     opacity: 0.5,
     fontSize: 24,
     fontWeight: "700",
-    color: Colors.textPrimary,
+    color: Colors.textLight,
   },
   separator: {
     height: 1,
-    backgroundColor: Colors.textPrimary,
+    backgroundColor: Colors.textLight,
     marginVertical: 12,
     opacity: 0.3,
     marginTop: 16,
   },
   question: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "700",
-    color: Colors.textPrimary,
+    color: Colors.textLight,
     marginTop: 16,
     minHeight: 110,
   },

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { FontAwesome } from "@expo/vector-icons";
@@ -41,10 +41,14 @@ const Timer: React.FC<TimerProps> = ({ duration = 30, onComplete }) => {
     }).start();
   }, [timeLeft]);
 
-  const animatedWidth = progressAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: ["0%", "100%"],
-  });
+  const animatedWidth = useMemo(
+    () =>
+      progressAnim.interpolate({
+        inputRange: [0, 100],
+        outputRange: ["0%", "100%"],
+      }),
+    [progressAnim] // Dependency array
+  );
 
   return (
     <View style={styles.container}>

@@ -6,13 +6,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useScore } from "@/hooks/score";
 import { supabase } from "@/lib/supabse";
 import ConfettiCannon from "react-native-confetti-cannon";
+import { Colors } from "@/constants/Colors";
 
-const Colors = {
-  primaryDark: "#0f172a",
-  textPrimary: "#ffffff",
-  gold: "#FFD700",
-  selected: "#2a8ff5ff",
-};
 
 type NextButtonProps = {
   onPress: () => void;
@@ -50,12 +45,12 @@ export default function FinalScorePage() {
   };
 
   const handleGoHome = () => {
-    router.push("/");
+    router.push("/home");
   };
 
   const handleLogOut = () => {
-    const logout = supabase.auth.signOut();
-    router.replace("/auth/login");
+    supabase.auth.signOut();
+    router.replace("/(auth)/login");
   }
 
   return (
@@ -80,7 +75,7 @@ export default function FinalScorePage() {
         <View style={styles.contentContainer}>
           <Text style={styles.header}>Quiz Complete!</Text>
 
-          <FontAwesome name="trophy" size={150} color={Colors.gold} />
+          <FontAwesome name="trophy" size={150} color={Colors.accent} />
 
           <Text style={styles.scoreLabel}>Your Final Score</Text>
 
@@ -105,7 +100,7 @@ export default function FinalScorePage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: Colors.backgroundDark,
     padding: 24,
     justifyContent: "center",
     alignItems: "center",
@@ -119,20 +114,20 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 32,
     fontWeight: "700",
-    color: Colors.textPrimary,
+    color: Colors.textLight,
     marginBottom: 40,
     textAlign: "center",
   },
   scoreLabel: {
     fontSize: 24,
-    color: Colors.textPrimary,
+    color: Colors.textLight,
     opacity: 0.7,
     marginTop: 40,
   },
   scoreText: {
     fontSize: 72,
     fontWeight: "bold",
-    color: Colors.gold, // Will now use the vivid #FFD700
+    color: Colors.accent, // Will now use the vivid #FFD700
     marginBottom: 50,
   },
   buttonContainer: {
@@ -145,12 +140,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryButton: {
-    backgroundColor: Colors.selected,
+    backgroundColor: Colors.accent,
   },
   secondaryButton: {
     backgroundColor: "transparent",
     borderWidth: 2,
-    borderColor: Colors.selected,
+    borderColor: Colors.secondary,
   },
   buttonText: {
     fontSize: 18,
@@ -158,6 +153,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   secondaryButtonText: {
-    color: Colors.selected,
+    color: Colors.textSecondary,
   },
 });

@@ -8,10 +8,10 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { ScoreProvider } from "@/hooks/score";
 import { Colors } from "@/constants/Colors";
-
+import * as WebBrowser from "expo-web-browser";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Header } from "@react-navigation/elements";
-import SplashScreenController from "./components/splash-screen-controller";
+import SplashScreenController from "@/component/splash-screen-controller";
+  WebBrowser.maybeCompleteAuthSession();
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -38,7 +38,7 @@ export default function RootLayout() {
           title: '',
           headerBackTitle: "Categories",
           headerStyle: {
-            backgroundColor: Colors.primaryDark,
+            backgroundColor: Colors.backgroundDark
           },
           headerTintColor: '#fff',
           headerTitleStyle: {

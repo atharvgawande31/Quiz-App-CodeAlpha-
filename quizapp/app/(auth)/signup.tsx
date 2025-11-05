@@ -24,7 +24,7 @@ export default function SignUpScreen() {
       setError("");
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
-      router.replace("/auth/login");
+      router.replace("/(auth)/login");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -88,7 +88,7 @@ export default function SignUpScreen() {
 
         <View style={styles.bottomText}>
           <Text style={{ color: "#ccc" }}>Already have an account?</Text>
-          <Link href="/auth/login" style={styles.linkText}>
+          <Link href="/(auth)/login" style={styles.linkText}>
             Login
           </Link>
         </View>
@@ -100,14 +100,14 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.primaryDark,
+    backgroundColor: Colors.backgroundDark,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
   },
   title: {
     fontSize: 30,
-    color: Colors.textPrimary,
+    color: Colors.textLight,
     fontWeight: "700",
     marginBottom: 8,
   },

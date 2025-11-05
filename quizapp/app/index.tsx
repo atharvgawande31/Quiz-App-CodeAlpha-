@@ -1,182 +1,113 @@
-// app/index.js
+// app/WelcomeScreen.tsx (or app/index.tsx if this is your entry)
 
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
-import { useRouter } from "expo-router";
+import { Borders } from "@/constants/Border";
+import { Colors } from "@/constants/Colors";
+import { Typography } from "@/constants/FontSizes";
+import { Spacing } from "@/constants/Spacing";
+import React from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FontAwesome } from "@expo/vector-icons";
-import { Colors } from "@/constants/Colors"; // Assuming this file exists
+import { Button } from "@/component/button";
+import { useRouter } from "expo-router";
 
-// --- Style Map (Unchanged) ---
-// This map now acts as our filter. Only categories in this list will be shown.
-const categoryStyles = {
-  9: { icon: "globe", color: "#4E89AE" },
-  10: { icon: "book", color: "#C0392B" },
-  11: { icon: "film", color: "#2C3E50" },
-  12: { icon: "music", color: "#8E44AD" },
-  14: { icon: "tv", color: "#2980B9" },
-  15: { icon: "gamepad", color: "#D35400" },
-  17: { icon: "flask", color: "#27AE60" },
-  18: { icon: "laptop", color: "#3498DB" },
-  21: { icon: "futbol-o", color: "#16A085" },
-  22: { icon: "map-marker", color: "#F1C40F" },
-  23: { icon: "hourglass-start", color: "#795548" },
-  27: { icon: "paw", color: "#324285ff" },
-  default: { icon: "question-circle", color: "#7F8C8D" },
-};
+const WelcomeIllustration = require("../assets/images/react-logo.png"); // Use an existing asset
 
-// getCategoryStyle function (Unchanged)
-const getCategoryStyle = (id: number) => {
-  const key = id.toString() as keyof typeof categoryStyles;
-  return categoryStyles[key] || categoryStyles.default;
-};
-
-// --- API (Unchanged) ---
-const CATEGORY_API = "https://opentdb.com/api_category.php";
-
-interface ApiCategory {
-  id: number;
-  name: string;
-}
-
-interface StyledCategory extends ApiCategory {
-  icon: string;
-  color: string;
-  displayName: string;
-}
-
-export default function CategoriesScreen() {
+export default function WelcomeScreen() {
   const router = useRouter();
-  
-  const [categories, setCategories] = useState<StyledCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(CATEGORY_API);
-        const data: { trivia_categories: ApiCategory[] } = await response.json();
-        
-        const filteredCategories = data.trivia_categories.filter((cat) => {
-          const key = cat.id.toString() as keyof typeof categoryStyles;
-          return categoryStyles.hasOwnProperty(key) && key !== 'default';
-        });
-
-        const styledCategories = filteredCategories.map((cat) => {
-          const style = getCategoryStyle(cat.id);
-          return {
-            ...cat,
-            icon: style.icon,
-            color: style.color,
-            displayName: cat.name.replace("Entertainment: ", "").replace("Science: ", ""),
-          };
-        });
-        
-        setCategories(styledCategories);
-      } catch (error) {
-        console.error("Failed to fetch categories:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    // --- END OF LOGIC CHANGE ---
-    
-    fetchCategories();
-  }, []);
-
-  const handleCategoryPress = (categoryId: number) => {
-    // I'm assuming your quiz page is at '/quiz' based on our previous chat
-    router.push(`/quiz?category=${categoryId}`);
+  const handleLoginPress = () => {
+    router.push("/(auth)/login");
   };
 
-  if (isLoading) {
-    return (
-       <SafeAreaView style={[styles.container, styles.centerAll]}>
-           <ActivityIndicator size="large" color={Colors.textPrimary} />
-           <Text style={[styles.text, { marginTop: 10 }]}>Loading Categories...</Text>
-         </SafeAreaView>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Choose a Category</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.illustrationContainer}>
+          <Image
+            source={WelcomeIllustration} // Use your actual image source
+            style={styles.illustration}
+            resizeMode="contain"
+          />
+        </View>
 
-      <FlatList
-        data={categories}
-        numColumns={2}
-        keyExtractor={(item) => item.id.toString()}
-        columnWrapperStyle={{ justifyContent: "space-between" }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.card, { backgroundColor: item.color }]}
-            onPress={() => handleCategoryPress(item.id)}
-          >
-            <FontAwesome name={item.icon as any} size={32} color="#FFFFFF" />
-            <Text style={styles.cardText}>{item.displayName}</Text>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
+        {/* Content */}
+        <View style={styles.contentContainer}>
+          <Text style={styles.welcomeTitle}>Welcome to SeekJob</Text>
+          <Text style={styles.welcomeText}>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua.
+          </Text>
+
+          {/* Buttons */}
+          <Button
+            title="Get Started"
+            onPress={handleLoginPress}
+            colorScheme="secondary"
+            iconName="arrow-right"
+            iconPosition="right"
+            style={styles.button}
+          />
+          {/* Removed the grey Register button as requested */}
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
-// --- Styles (Unchanged) ---
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: Colors.welcomeBackground, // The light grey background from the image
+  },
   container: {
     flex: 1,
-    backgroundColor: "#0B0B15",
-    paddingHorizontal: 16,
-    paddingTop: 40,
+    backgroundColor: Colors.welcomeBackground,
+    justifyContent: "space-between", // Pushes content and illustration apart
+    alignItems: "center",
   },
-  header: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginTop: 48,
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  card: {
-    flex: 1,
-    height: 140,
-    borderRadius: 16,
+  illustrationContainer: {
+    flex: 1, // Takes up available space
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
-    marginHorizontal: 4,
-    elevation: 3,
-    gap: 10,
-    padding: 10,
+    width: "100%",
   },
-  cardText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#FFFFFF",
+  illustration: {
+    width: "90%", // Adjust based on your image dimensions
+    height: 250, // Adjust height as needed
+    maxWidth: 350,
+  },
+  contentContainer: {
+    width: "100%",
+    backgroundColor: Colors.textLight, // White background for the bottom section
+    borderTopLeftRadius: Borders.radius.xl,
+    borderTopRightRadius: Borders.radius.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xxl,
+    alignItems: "center",
+    paddingBottom: Spacing.xxxl + Spacing.lg, // Extra padding for safe area bottom inset
+    elevation: 10, // Shadow for Android
+    shadowColor: Colors.textPrimary, // Shadow for iOS
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+  },
+  welcomeTitle: {
+    fontSize: Typography.fontSizes.h2,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.md,
     textAlign: "center",
   },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#FFFFFF",
+  welcomeText: {
+    fontSize: Typography.fontSizes.md,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: Spacing.xxl,
+    lineHeight: Typography.fontSizes.md * 1.5,
+    maxWidth: 300,
   },
-    centerAll: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 30,
+  button: {
+    width: "100%",
+    marginBottom: Spacing.md, // Spacing between buttons
   },
-    text: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: Colors.textPrimary,
-  }
 });

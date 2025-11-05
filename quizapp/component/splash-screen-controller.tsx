@@ -13,10 +13,10 @@ export default function SplashScreenController() {
 
         if (data.session) {
           // user logged in → go home
-          router.replace('/');
+          router.replace('/home');
         } else {
           // user not logged in → go to login
-          router.replace('/auth/login');
+          router.replace('/');
         }
       } catch (e) {
         console.error('Splash Error:', e);
