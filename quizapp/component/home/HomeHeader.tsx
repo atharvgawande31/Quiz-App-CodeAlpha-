@@ -1,25 +1,22 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { FontAwesome } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
-import { useQuestionsSolved } from "@/hooks/questionSolved";
+import { useDaysStreak } from "@/hooks/daysStreak";
+import { HeroSolid } from "@nandorojo/heroicons";
+import React from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 export default function HomeHeader() {
-  const { totalQuestionsSolved } = useQuestionsSolved(); // Hook handles logic
+  const { daysStreak } = useDaysStreak(); // Hook handles logic
 
   return (
     <View style={[styles.topSection]}>
       <View style={styles.userSection}>
-        <View style={styles.avatar}>
-          <FontAwesome name="user" size={24} color={Colors.primary} />
-        </View>
+        <Text style={styles.greeting}>Hello</Text>
         <Text style={styles.userName}>Sean Bram</Text>
       </View>
       <View style={styles.questionsSolvedContainer}>
-        <FontAwesome name="question-circle" size={20} color={Colors.primary} />
+        <HeroSolid.Fire color={Colors.primary} width={20} height={20} />
         <Text style={styles.questionsSolvedText}>
-          {totalQuestionsSolved.toLocaleString()}
+          {daysStreak} {daysStreak === 1 ? "day" : "days"}
         </Text>
       </View>
     </View>
@@ -35,9 +32,9 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   userSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 4,
   },
   avatar: {
     width: 40,
@@ -49,8 +46,13 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.primary,
   },
-  userName: {
+  greeting: {
     fontSize: 18,
+    fontWeight: "600",
+    color: Colors.secondary,
+  },
+  userName: {
+    fontSize: 24,
     fontWeight: "600",
     color: Colors.primary,
   },
