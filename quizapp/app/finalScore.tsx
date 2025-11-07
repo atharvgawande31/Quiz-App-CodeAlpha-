@@ -1,12 +1,16 @@
-import React, { useState } from "react"; // 1. Import useState
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { FontAwesome } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { Colors } from "@/constants/Colors";
 import { useScore } from "@/hooks/score";
 import { supabase } from "@/lib/supabse";
+import { FontAwesome } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react"; // 1. Import useState
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ConfettiCannon from "react-native-confetti-cannon";
-import { Colors } from "@/constants/Colors";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+const QUESTIONS_SOLVED_KEY = "@total_questions_solved";
+const QUESTIONS_PER_QUIZ = 10;
 
 
 type NextButtonProps = {
@@ -39,6 +43,22 @@ export default function FinalScorePage() {
   const { category } = useLocalSearchParams();
 
   const [showScore, setShowScore] = useState(false);
+
+  // Track total questions solved when quiz is completed
+  useEffect(() => {
+    const updateQuestionsSolved = async () => {
+      try {
+        const currentValue = await AsyncStorage.getItem(QUESTIONS_SOLVED_KEY);
+        const currentTotal = currentValue ? parseInt(currentValue, 10) : 0;
+        const newTotal = currentTotal + QUESTIONS_PER_QUIZ;
+        await AsyncStorage.setItem(QUESTIONS_SOLVED_KEY, newTotal.toString());
+      } catch (error) {
+        console.error("Error updating questions solved:", error);
+      }
+    };
+
+    updateQuestionsSolved();
+  }, []);
 
   const handleRestart = () => {
     router.push(`/quiz?category=${category}`);
